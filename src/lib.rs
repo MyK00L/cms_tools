@@ -87,7 +87,7 @@ struct User{
     join_date: f64,
     score: u32,
     global_access_level: u8,
-    scores: Vec<Score>
+    scores: Option<Vec<Score> >
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -135,11 +135,15 @@ struct Client{
 }
 
 impl Client{
+    //create a new client with given username.
+    //always use this to create a client
     fn new(username: String) -> Self {
         Client{client:reqwest::Client::builder().referer(false).cookie_store(true).build().unwrap(),username:username,logged:false}
     }
+    //login
     fn login(&mut self, password: String) -> Result<bool,u8> {
         if self.logged {
+            //already logged
             return Ok(true);
         }
         match self.client.post("https://training.olinfo.it/api/user").json(&serde_json::json!({"action":"login","keep_signed":"false","username":self.username,"password":password})).send() {
@@ -153,21 +157,26 @@ impl Client{
                         match resp.success {
                             1 => {
                                 self.logged = true;
+                                //successful login
                                 Ok(false)
                             }
+                            //wrong username/password
                             _ => Err(3)
                         }
                     },
                     _ => {
+                        //should be unreachable code
                         Err(2)
                     }
                 }
             },
             _ => {
+                //no connection
                 Err(1)
             }
         }
     }
+    //get list of users in reverse order of score in [first,last)
     fn get_ranking(&self, first: usize, last: usize) -> Result<List,u8> {
         match self.client.post("https://training.olinfo.it/api/user").json(&serde_json::json!({"action":"list","first":first,"last":last})).send() {
             Ok(mut response) => {
@@ -186,6 +195,7 @@ impl Client{
             }
         }
     }
+    //get the details of a specific user
     fn get_user(&self, username: String) -> Result<User,u8> {
         match self.client.post("https://training.olinfo.it/api/user").json(&serde_json::json!({"action":"get","username":username})).send() {
             Ok(mut response) => {
@@ -201,6 +211,7 @@ impl Client{
             }
         }
     }
+    //get the details of a specific task
     fn get_task(&self, name: String) -> Result<Task,u8> {
         match self.client.post("https://training.olinfo.it/api/task").json(&serde_json::json!({"action":"get","name":name})).send() {
             Ok(mut response) => {
@@ -219,6 +230,7 @@ impl Client{
             }
         }
     }
+    //get the statistics for a specific task
     fn get_stats(&self, name: String) -> Result<Stats,u8> {
         match self.client.post("https://training.olinfo.it/api/task").json(&serde_json::json!({"action":"stats","name":name})).send() {
             Ok(mut response) => {
@@ -237,6 +249,7 @@ impl Client{
             }
         }
     }
+    //get the list of available tests
     fn get_tests(&self) -> Result<Tests,u8> {
         match self.client.post("https://training.olinfo.it/api/test").json(&serde_json::json!({"action":"list"})).send() {
             Ok(mut response) => {
@@ -255,6 +268,7 @@ impl Client{
             }
         }
     }
+    //get the details and text of a specific test
     fn get_test(&self, test_name: String) -> Result<Test,u8> {
         match self.client.post("https://training.olinfo.it/api/test").json(&serde_json::json!({"action":"get","test_name":test_name})).send() {
             Ok(mut response) => {
@@ -273,6 +287,8 @@ impl Client{
             }
         }
     }
+    //get list of tasks in [first,last) in the given order, possible orders are: newest, easiest, hardest
+    //if an invalid order is given, it is assumed to be newest
     fn get_task_list(&self, first: usize, last: usize, order: String) -> Result<TaskList,u8> {
         match self.client.post("https://training.olinfo.it/api/task").json(&serde_json::json!({"action":"list","first":first,"last":last,"order":order})).send() {
             Ok(mut response) => {
@@ -283,10 +299,12 @@ impl Client{
                             _ => Err(3)
                         }
                     },
+                    //probabilly invalid parameters, eg last>first
                     _ => Err(2)
                 }
             },
             _ => {
+                //no connection
                 Err(1)
             }
         }
@@ -319,7 +337,7 @@ mod tests {
     }
     #[test]
     fn it_works() {
-
+        let mut m = Client::new(String::from("aoheusnaotuhsanouh"));
+        println!("{:?}",m.get_ranking(0, 8));
     }
 }
-
