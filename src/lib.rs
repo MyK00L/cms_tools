@@ -592,6 +592,30 @@ impl Client{
             }
         }
     }
+    //submit a not output-only task
+    fn submit_normal(&self, task_name: String, text: String, lang: String) -> Result<DetailedSubmission,u8> {
+        match self.get_task(task_name.clone()) {
+            Ok(t) => {
+                match self.client.post("https://training.olinfo.it/api/submission").json(&serde_json::json!({"action":"new","files":{t.submission_format[0].as_str():{"data":base64::encode(&text),"filename":format!("ace.{}",lang)}},"task_name":task_name})).send() {
+                    Ok(mut response) => {
+                        match response.json::<DetailedSubmission>() {
+                            Ok(resp) => {
+                                match resp.success {
+                                    1 => Ok(resp),
+                                    _ => Err(4)
+                                }
+                            },
+                            _ => Err(3)
+                        }
+                    },
+                    _ => {
+                        Err(2)
+                    }
+                }
+            }
+            _ => Err(1)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -621,8 +645,7 @@ mod tests {
     #[test]
     fn it_works() {
         let mut m = Client::new(String::from("MyK_00L"));
-        m.login(String::from("false"));
-        let t = m.get_submissions(String::from("tai_scavi")).unwrap();
-        println!("{:?}",m.get_file(&t.submissions[0].files[0]));
+        m.login(String::from("not"));
+        println!("{:?}",m.submit_normal(String::from("ois_atc2"), String::from("int main(){return 1;}"), String::from("cpp")));
     }
 }
