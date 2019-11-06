@@ -152,6 +152,15 @@ struct Techniques{
     tags: Vec<String>
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct RecoverResponse{
+    message: Option<String>,
+    #[serde(rename = "type")]
+    thing_type: u8,
+    success: u8,
+    error: Option<String>
+}
+
 struct Client{
     client : reqwest::Client,
     username: String,
@@ -411,6 +420,7 @@ impl Client{
             }
         }
     }
+    //get list of technique tags
     fn get_techniques(&self) -> Result<Techniques,u8> {
         match self.client.post("https://training.olinfo.it/api/tag").json(&serde_json::json!({"action":"list","filter":"techniques"})).send() {
             Ok(mut response) => {
@@ -418,6 +428,49 @@ impl Client{
                     Ok(resp) => {
                         match resp.success {
                             1 => Ok(resp),
+                            _ => Err(3)
+                        }
+                    },
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
+    //recover lost password, use empty code for getting email
+    fn recover(&self, email: String, code: String) -> Result<RecoverResponse,u8> {
+        match self.client.post("https://training.olinfo.it/api/user").json(&serde_json::json!({"action":"recover","code":code,"email":email})).send() {
+            Ok(mut response) => {
+                match response.json::<RecoverResponse>() {
+                    Ok(resp) => {
+                        match resp.success {
+                            1 => Ok(resp),
+                            _ => Err(3)
+                        }
+                    },
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
+    //update password/email, empty string for fields you dont want to update
+    fn user_update(&self, email: String, password: String, old_password: String) -> Result<(),u8> {
+        match self.client.post("https://training.olinfo.it/api/user").json(&serde_json::json!({"action":"update","email":email,"old_password":old_password,"password":password})).send() {
+            Ok(mut response) => {
+                #[derive(serde::Serialize, serde::Deserialize, Debug)]
+                struct Resp {
+                    success: u8
+                }
+                match response.json::<Resp>() {
+                    Ok(resp) => {
+                        println!("{:?}",resp);
+                        match resp.success {
+                            1 => Ok(()),
                             _ => Err(3)
                         }
                     },
@@ -457,7 +510,6 @@ mod tests {
     }
     #[test]
     fn it_works() {
-        let mut m = Client::new(String::from("a"));
-        println!("{:?}",m.get_task_list(0, 10, String::from("hardest"), Some(String::from("tai")), Some(String::from("ml"))));
+        let mut m = Client::new(String::from("Gemmady"));
     }
 }
