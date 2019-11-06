@@ -146,6 +146,12 @@ struct CheckResponse{
     error: Option<String>
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct Techniques{
+    success: u8,
+    tags: Vec<String>
+}
+
 struct Client{
     client : reqwest::Client,
     username: String,
@@ -404,6 +410,24 @@ impl Client{
             }
         }
     }
+    fn get_techniques(&self) -> Result<Techniques,u8> {
+        match self.client.post("https://training.olinfo.it/api/tag").json(&serde_json::json!({"action":"list","filter":"techniques"})).send() {
+            Ok(mut response) => {
+                match response.json::<Techniques>() {
+                    Ok(resp) => {
+                        match resp.success {
+                            1 => Ok(resp),
+                            _ => Err(3)
+                        }
+                    },
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -433,12 +457,6 @@ mod tests {
     #[test]
     fn it_works() {
         let mut m = Client::new(String::from("a"));
-        println!("{:?}",m.user_exists(String::from("filippos")));
-        println!("{:?}",m.check_username(String::from("filippos")));
-        println!("{:?}",m.check_username(String::from("a")));
-        println!("{:?}",m.check_username(String::from("/////////")));
-        println!("{:?}",m.check_email(String::from("filippos")));
-        println!("{:?}",m.check_email(String::from("aaoeuhsaotn@gmail.com")));
-        println!("{:?}",m.check_email(String::from("michaelchelli00@gmail.com")));
+        println!("{:?}",m.get_techniques());
     }
 }
