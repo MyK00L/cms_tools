@@ -140,6 +140,12 @@ struct RegionList{
     success: u8
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct CheckResponse{
+    success: u8,
+    error: Option<String>
+}
+
 struct Client{
     client : reqwest::Client,
     username: String,
@@ -340,6 +346,64 @@ impl Client{
             }
         }
     }
+    //check if there is an user with username = username
+    fn user_exists(&self, username: String) -> Result<bool,u8> {
+        match self.client.post("https://training.olinfo.it/api/check").json(&serde_json::json!({"type":"username","value":username})).send() {
+            Ok(mut response) => {
+                match response.json::<CheckResponse>() {
+                    Ok(resp) => {
+                        match resp.success {
+                            1 => Ok(false),
+                            _ => {
+                                match resp.error {
+                                    Some(x) => {
+                                        if x==String::from("This username is not available"){
+                                            Ok(true)
+                                        } else {
+                                            Ok(false)
+                                        }
+                                    }
+                                    _ => Err(3)
+                                }
+                            }
+                        }
+                    },
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
+    //check if username is valid, note: Ok does not mean username is valid
+    fn check_username(&self, username: String) -> Result<CheckResponse,u8> {
+        match self.client.post("https://training.olinfo.it/api/check").json(&serde_json::json!({"type":"username","value":username})).send() {
+            Ok(mut response) => {
+                match response.json::<CheckResponse>() {
+                    Ok(resp) => Ok(resp),
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
+    //check if email is valid, note: Ok does not mean email is valid
+    fn check_email(&self, email: String) -> Result<CheckResponse,u8> {
+        match self.client.post("https://training.olinfo.it/api/check").json(&serde_json::json!({"type":"email","value":email})).send() {
+            Ok(mut response) => {
+                match response.json::<CheckResponse>() {
+                    Ok(resp) => Ok(resp),
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -368,7 +432,13 @@ mod tests {
     }
     #[test]
     fn it_works() {
-        let mut m = Client::new(String::from("aoheusnaotuhsanouh"));
-        println!("{:?}",m.get_regions());
+        let mut m = Client::new(String::from("a"));
+        println!("{:?}",m.user_exists(String::from("filippos")));
+        println!("{:?}",m.check_username(String::from("filippos")));
+        println!("{:?}",m.check_username(String::from("a")));
+        println!("{:?}",m.check_username(String::from("/////////")));
+        println!("{:?}",m.check_email(String::from("filippos")));
+        println!("{:?}",m.check_email(String::from("aaoeuhsaotn@gmail.com")));
+        println!("{:?}",m.check_email(String::from("michaelchelli00@gmail.com")));
     }
 }
