@@ -161,6 +161,29 @@ struct RecoverResponse{
     error: Option<String>
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct File{
+    name: String,
+    digest: String
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct Submission{
+    files: Vec<File>,
+    compilation_outcome: Option<String>,
+    task_id: usize,
+    timestamp: f64,
+    evaluation_outcome: Option<String>,
+    score: Option<f32>,
+    id: usize,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct Submissions{
+    submissions: Vec<Submission>,
+    success: u8
+}
+
 struct Client{
     client : reqwest::Client,
     username: String,
@@ -482,6 +505,25 @@ impl Client{
             }
         }
     }
+    //get submissions for a task
+    fn get_submissions(&self, task_name: String) -> Result<Submissions,u8> {
+        match self.client.post("https://training.olinfo.it/api/submission").json(&serde_json::json!({"action":"list","task_name":task_name})).send() {
+            Ok(mut response) => {
+                match response.json::<Submissions>() {
+                    Ok(resp) => {
+                        match resp.success {
+                            1 => Ok(resp),
+                            _ => Err(3)
+                        }
+                    },
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -510,6 +552,8 @@ mod tests {
     }
     #[test]
     fn it_works() {
-        let mut m = Client::new(String::from("Gemmady"));
+        let mut m = Client::new(String::from("MyK_00L"));
+        m.login(String::from("not"));
+        println!("{:?}",m.get_submissions(String::from("tai_monete")));
     }
 }
