@@ -295,19 +295,31 @@ impl Client{
 
 #[cfg(test)]
 mod tests {
+    //preoii_flow : oo , no solves
+    //preoii_crew : oo
     use super::*;
     #[test]
-    fn it_works() {
-        //preoii_flow : oo , no solves
-        //preoii_crew : oo
-
+    fn best_times() {
         //make a client
-        let mut m = Client::new(String::from("Gemmady"));
+        let m = Client::new(String::from("Gemmady"));
+        let task_list = m.get_task_list(0,500,String::from("newest")).unwrap();
+        let mut hm = std::collections::HashMap::<String,u32>::new();
+        for i in task_list.tasks {
+            let best = m.get_stats(i.name).unwrap().best;
+            if best.len()>0 {
+                let t = hm.entry(best[0].username.clone()).or_insert(0);
+                *t+=1;
+            }
+        }
+        let mut v : Vec<(u32,String)> = hm.iter().map(|x| (*x.1,x.0.clone())).collect();
+        v.sort();
+        for i in v.iter().rev() {
+            println!("{} {}", i.1, i.0);
+        }
+    }
+    #[test]
+    fn it_works() {
 
-        //login
-        //println!("{:?}",m.login(String::from("not the real password")));
-
-        println!("{:?}",m.get_task_list(3,50,String::from("newest")));
     }
 }
 
