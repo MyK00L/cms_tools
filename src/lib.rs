@@ -28,6 +28,22 @@ struct Task {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct ListTask {
+    score: Option<f32>,
+    title: String,
+    score_multiplier: f64,
+    id: usize,
+    name: String
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct TaskList {
+    tasks: Vec<ListTask>,
+    num: usize,
+    success: u8
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct Stat {
     username: String,
     time: f32
@@ -257,6 +273,24 @@ impl Client{
             }
         }
     }
+    fn get_task_list(&self, first: usize, last: usize, order: String) -> Result<TaskList,u8> {
+        match self.client.post("https://training.olinfo.it/api/task").json(&serde_json::json!({"action":"list","first":first,"last":last,"order":order})).send() {
+            Ok(mut response) => {
+                match response.json::<TaskList>() {
+                    Ok(resp) => {
+                        match resp.success {
+                            1 => Ok(resp),
+                            _ => Err(3)
+                        }
+                    },
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -273,7 +307,7 @@ mod tests {
         //login
         //println!("{:?}",m.login(String::from("not the real password")));
 
-        println!("{:?}",m.get_test(String::from("scolastiche2012_pas")));
+        println!("{:?}",m.get_task_list(3,50,String::from("newest")));
     }
 }
 
