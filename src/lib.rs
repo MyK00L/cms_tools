@@ -128,6 +128,18 @@ struct Tests{
     success: u8
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct Region{
+    id: usize,
+    name: String
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct RegionList{
+    regions: Vec<Region>,
+    success: u8
+}
+
 struct Client{
     client : reqwest::Client,
     username: String,
@@ -309,6 +321,25 @@ impl Client{
             }
         }
     }
+    //get a list of the regions
+    fn get_regions(&self) -> Result<RegionList,u8> {
+        match self.client.post("https://training.olinfo.it/api/location").json(&serde_json::json!({"action":"listregions"})).send() {
+            Ok(mut response) => {
+                match response.json::<RegionList>() {
+                    Ok(resp) => {
+                        match resp.success {
+                            1 => Ok(resp),
+                            _ => Err(3)
+                        }
+                    },
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -338,6 +369,6 @@ mod tests {
     #[test]
     fn it_works() {
         let mut m = Client::new(String::from("aoheusnaotuhsanouh"));
-        println!("{:?}",m.get_ranking(0, 8));
+        println!("{:?}",m.get_regions());
     }
 }
