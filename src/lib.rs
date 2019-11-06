@@ -179,6 +179,41 @@ struct Submission{
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct Testcase{
+    text: String,
+    outcome: String,
+    time: f64,
+    idx: String,
+    memory: u64
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct ScodeDetail{
+    testcases: Vec<Testcase>,
+    score: f32,
+    max_score: f32,
+    idx: usize
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct DetailedSubmission{
+    files: Vec<File>,
+    compilation_outcome: Option<String>,
+    task_id: usize,
+    language: Option<String>,
+    score_details: Option<Vec<ScodeDetail> >,
+    timestamp: f64,
+    compilation_stderr: Option<String>,
+    compilation_time: Option<f64>,
+    evaluation_outcome: Option<String>,
+    score: Option<f64>,
+    compilation_stdout: Option<String>,
+    success: u8,
+    id: usize,
+    compilation_memory: Option<u64>
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
 struct Submissions{
     submissions: Vec<Submission>,
     success: u8
@@ -524,6 +559,25 @@ impl Client{
             }
         }
     }
+    //get details for specific submission
+    fn get_submission_details(&self, id: usize) -> Result<DetailedSubmission,u8> {
+        match self.client.post("https://training.olinfo.it/api/submission").json(&serde_json::json!({"action":"details","id":id})).send() {
+            Ok(mut response) => {
+                match response.json::<DetailedSubmission>() {
+                    Ok(resp) => {
+                        match resp.success {
+                            1 => Ok(resp),
+                            _ => Err(3)
+                        }
+                    },
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -553,7 +607,7 @@ mod tests {
     #[test]
     fn it_works() {
         let mut m = Client::new(String::from("MyK_00L"));
-        m.login(String::from("not"));
-        println!("{:?}",m.get_submissions(String::from("tai_monete")));
+        m.login(String::from("false"));
+        println!("{:?}",m.get_submission_details(666));
     }
 }
