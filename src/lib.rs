@@ -578,6 +578,20 @@ impl Client{
             }
         }
     }
+    //download file
+    fn get_file(&self, file: &File) -> Result<String,u8> {
+        match self.client.get(format!("https://training.olinfo.it/api/files/{}/{}",file.digest,file.name).as_str()).send() {
+            Ok(mut response) => {
+                match response.text() {
+                    Ok(resp) => Ok(resp),
+                    _ => Err(2)
+                }
+            },
+            _ => {
+                Err(1)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -608,6 +622,7 @@ mod tests {
     fn it_works() {
         let mut m = Client::new(String::from("MyK_00L"));
         m.login(String::from("false"));
-        println!("{:?}",m.get_submission_details(666));
+        let t = m.get_submissions(String::from("tai_scavi")).unwrap();
+        println!("{:?}",m.get_file(&t.submissions[0].files[0]));
     }
 }
