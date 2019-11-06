@@ -311,10 +311,11 @@ impl Client{
             }
         }
     }
-    //get list of tasks in [first,last) in the given order, possible orders are: newest, easiest, hardest
+    //get list of tasks in [first,last) in the given order with the given tag, possible orders are: newest, easiest, hardest
     //if an invalid order is given, it is assumed to be newest
-    fn get_task_list(&self, first: usize, last: usize, order: String) -> Result<TaskList,u8> {
-        match self.client.post("https://training.olinfo.it/api/task").json(&serde_json::json!({"action":"list","first":first,"last":last,"order":order})).send() {
+    fn get_task_list(&self, first: usize, last: usize, order: String, tag: Option<String>) -> Result<TaskList,u8> {
+        let payload = if tag.is_none() { serde_json::json!({"action":"list","first":first,"last":last,"order":order}) } else { serde_json::json!({"action":"list","first":first,"last":last,"order":order,"tag":tag}) };
+        match self.client.post("https://training.olinfo.it/api/task").json(&payload).send() {
             Ok(mut response) => {
                 match response.json::<TaskList>() {
                     Ok(resp) => {
@@ -439,7 +440,7 @@ mod tests {
     fn best_times() {
         //make a client
         let m = Client::new(String::from("Gemmady"));
-        let task_list = m.get_task_list(0,500,String::from("newest")).unwrap();
+        let task_list = m.get_task_list(0,500,String::from("newest"),None).unwrap();
         let mut hm = std::collections::HashMap::<String,u32>::new();
         for i in task_list.tasks {
             let best = m.get_stats(i.name).unwrap().best;
@@ -457,6 +458,6 @@ mod tests {
     #[test]
     fn it_works() {
         let mut m = Client::new(String::from("a"));
-        println!("{:?}",m.get_techniques());
+        println!("{:?}",m.get_task_list(0, 10, String::from("hardest"), Some(String::from("tai"))));
     }
 }
