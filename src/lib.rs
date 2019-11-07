@@ -908,7 +908,7 @@ mod tests {
     #[test]
     fn my_test() {
         let mut m = Client::new(String::from("Gemmady"));
-        m.login(String::from("falseisanicelanguage"));
+        println!("{:?}",m.login(String::from("falseisanicelanguage")));
         println!("{:?}",m.get_submission_time(&m.get_submission(394592).unwrap()));
     }
 }
