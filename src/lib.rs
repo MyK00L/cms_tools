@@ -640,6 +640,24 @@ impl Client {
         }
     }
 
+    /// get the worst execution time among all testcases for a certain submission
+    ///
+    /// [example is clicking on submission id and getting the highest value in the `Time` column](https://training.olinfo.it/#/task/preoii_piccioni/submissions)
+    pub fn get_submission_time(&self, sub: &DetailedSubmission) -> Result<f64,()> {
+        match &sub.score_details {
+            Some(v) => {
+                let mut res: f64 = 0.0;
+                for sc in v {
+                    for tc in &sc.testcases {
+                        res = res.max(tc.time);
+                    }
+                }
+                Ok(res)
+            },
+            _ => Err(())
+        }
+    }
+
     /// submit a not output-only task
     ///
     /// lang should be the extension of the file (c, cpp, pas)
@@ -862,6 +880,7 @@ mod tests {
             m.get_submission_list(String::from("preoii_piccioni"))
         );
         println!("\n\nGET_SUBMISSION\n{:?}", m.get_submission(666));
+        println!("\n\nGET_SUBMISSION_TIME\n{:?}",m.get_submission_time(&m.get_submission(394592).unwrap()));
         println!(
             "\n\nSUBMIT_NORMAL\n{:?}",
             m.submit_normal(
@@ -884,5 +903,12 @@ mod tests {
                 name: String::from("missioni.cpp")
             })
         );
+    }
+
+    #[test]
+    fn my_test() {
+        let mut m = Client::new(String::from("Gemmady"));
+        m.login(String::from("falseisanicelanguage"));
+        println!("{:?}",m.get_submission_time(&m.get_submission(394592).unwrap()));
     }
 }
