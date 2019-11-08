@@ -91,7 +91,7 @@ pub struct Tag {
 /// Detailed task description
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct DetailedTask {
-    time_limit: Option<f32>,
+    time_limit: Option<f64>,
     help_available: bool,
     statements: Statement,
     name: String,
@@ -109,7 +109,7 @@ pub struct DetailedTask {
 /// Task in a TaskList
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Task {
-    score: Option<f32>,
+    score: Option<f64>,
     title: String,
     score_multiplier: f64,
     id: usize,
@@ -128,7 +128,7 @@ pub struct TaskList {
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Stat {
     username: String,
-    time: f32,
+    time: f64,
 }
 
 /// Stats of a certain task
@@ -147,7 +147,7 @@ pub struct Stats {
 /// Score achieved on a certain task by someone
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct Score {
-    score: f32,
+    score: f64,
     name: String,
     title: String,
 }
@@ -167,7 +167,7 @@ pub struct Submission {
     task_id: usize,
     timestamp: f64,
     evaluation_outcome: Option<String>,
-    score: Option<f32>,
+    score: Option<f64>,
     id: usize,
 }
 
@@ -185,8 +185,8 @@ pub struct Testcase {
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct ScoreDetail {
     testcases: Vec<Testcase>,
-    score: f32,
-    max_score: f32,
+    score: f64,
+    max_score: f64,
     idx: usize,
 }
 
@@ -208,12 +208,102 @@ pub struct DetailedSubmission {
     id: usize,
     compilation_memory: Option<u64>,
 }
+impl DetailedSubmission {
+    /// get the maximum execution time among all testcases
+    pub fn get_time(&self) -> Option<f64> {
+        match &self.score_details {
+            Some(sc) => {
+                let mut res: f64 = 0.0;
+                for subtask in sc {
+                    for testcase in &subtask.testcases {
+                        res = res.max(testcase.time);
+                    }
+                }
+                Some(res)
+            }
+            _ => None,
+        }
+    }
+    /// get the maximum memory used among all testcases
+    pub fn get_memory(&self) -> Option<u64> {
+        match &self.score_details {
+            Some(sc) => {
+                let mut res: u64 = 0;
+                for subtask in sc {
+                    for testcase in &subtask.testcases {
+                        res = res.max(testcase.memory);
+                    }
+                }
+                Some(res)
+            }
+            _ => None,
+        }
+    }
+}
 
 /// List of submissions by a user for a task
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct SubmissionList {
     submissions: Vec<Submission>,
     success: u8,
+}
+impl SubmissionList {
+    /// get the best score achieved among all submissions
+    pub fn best_score(&self) -> f64 {
+        let mut res: f64 = 0.0;
+        for sub in &self.submissions {
+            if let Some(score) = sub.score {
+                res = res.max(score);
+            }
+        }
+        res
+    }
+    /// get the last submission among those with highest score
+    pub fn get_last_high(&self) -> Option<&Submission> {
+        let mut best_score: f64 = -1.0;
+        let mut best_ind: usize = self.submissions.len();
+        for i in 0..self.submissions.len() {
+            if let Some(score) = self.submissions[i].score {
+                if score > best_score {
+                    best_score = score;
+                    best_ind = i;
+                    if score > 100.0 {
+                        break;
+                    }
+                }
+            }
+        }
+        if best_ind == self.submissions.len() {
+            return None;
+        }
+        return Some(&self.submissions[best_ind]);
+    }
+    /// get the fastest submission among those with highest score
+    ///
+    /// in case of parity, the latest is returned
+    pub fn get_fastest_high(&self, client: &Client) -> Option<&Submission> {
+        let best_score: f64 = self.best_score();
+        let mut best_time: f64 = 100.0;
+        let mut best_ind: usize = self.submissions.len();
+        for i in 0..self.submissions.len() {
+            if let Some(score) = self.submissions[i].score {
+                if score == best_score {
+                    if let Ok(sub) = client.get_submission(self.submissions[i].id) {
+                        if let Some(time) = sub.get_time() {
+                            if time < best_time {
+                                best_time = time;
+                                best_ind = i;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if best_ind == self.submissions.len() {
+            return None;
+        }
+        return Some(&self.submissions[best_ind]);
+    }
 }
 
 // Test related
@@ -278,7 +368,7 @@ pub struct TechniqueList {
 
 // Client
 
-/// **Client** you will do **everything** with
+/// **Client** you will do almost everything with
 pub struct Client {
     /// The reqwest client
     client: reqwest::Client,
@@ -388,7 +478,6 @@ impl Client {
                 }
                 match response.json::<Resp>() {
                     Ok(resp) => {
-                        println!("{:?}",resp);
                         match resp.success {
                             1 => Ok(()),
                             _ => Err(3)
@@ -640,24 +729,6 @@ impl Client {
         }
     }
 
-    /// get the worst execution time among all testcases for a certain submission
-    ///
-    /// [example is clicking on submission id and getting the highest value in the `Time` column](https://training.olinfo.it/#/task/preoii_piccioni/submissions)
-    pub fn get_submission_time(&self, sub: &DetailedSubmission) -> Result<f64,()> {
-        match &sub.score_details {
-            Some(v) => {
-                let mut res: f64 = 0.0;
-                for sc in v {
-                    for tc in &sc.testcases {
-                        res = res.max(tc.time);
-                    }
-                }
-                Ok(res)
-            },
-            _ => Err(())
-        }
-    }
-
     /// submit a not output-only task
     ///
     /// lang should be the extension of the file (c, cpp, pas)
@@ -880,7 +951,6 @@ mod tests {
             m.get_submission_list(String::from("preoii_piccioni"))
         );
         println!("\n\nGET_SUBMISSION\n{:?}", m.get_submission(666));
-        println!("\n\nGET_SUBMISSION_TIME\n{:?}",m.get_submission_time(&m.get_submission(394592).unwrap()));
         println!(
             "\n\nSUBMIT_NORMAL\n{:?}",
             m.submit_normal(
@@ -907,8 +977,15 @@ mod tests {
 
     #[test]
     fn my_test() {
-        let mut m = Client::new(String::from("Gemmady"));
-        println!("{:?}",m.login(String::from("falseisanicelanguage")));
-        println!("{:?}",m.get_submission_time(&m.get_submission(394592).unwrap()));
+        let mut m = Client::new(String::from("MyK_00L"));
+        println!("{:?}", m.login(String::from("sure")));
+        let id = m
+            .get_submission_list(String::from("tai_mle"))
+            .unwrap()
+            .get_fastest_high(&m)
+            .unwrap()
+            .id;
+        let sub = m.get_submission(id).unwrap();
+        println!("{}: {}", id, sub.get_memory().unwrap());
     }
 }
