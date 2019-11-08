@@ -17,6 +17,38 @@
 //!     println!("{} {}", i.1, i.0);
 //! }
 //! ```
+//! * Resubmit all fastest solutions
+//! ```
+//! let username = String::from("username");
+//! let password = String::from("password");
+//! let mut client = Client::new(username.clone());
+//! client.login(password).unwrap();
+//! let user = client.get_user(username).unwrap();
+//! for sc in user.scores.unwrap() {
+//!     if sc.score == 100.0 {
+//!         println!("{} has score 100", sc.title);
+//!         let sub_list = client.get_submission_list(sc.name.clone()).unwrap();
+//!         let best_sub = sub_list.get_fastest_high(&client).unwrap();
+//!         let files = &best_sub.files;
+//!         if files.len() == 1 { // if it is not an output-only
+//!             let mut submitted: bool = false;
+//!             while !submitted { // because cmsocial has a limit to submission rate
+//!                 println!("Resubmitting {}", sc.name.clone());
+//!                 if client
+//!                     .submit_normal(
+//!                         sc.name.clone(),
+//!                         client.get_file(&files[0]).unwrap(),
+//!                         String::from("cpp"),
+//!                     )
+//!                     .is_ok()
+//!                 {
+//!                     submitted = true;
+//!                 }
+//!             }
+//!         }
+//!     }
+//! }
+//! ```
 
 // User management related
 
@@ -177,7 +209,7 @@ pub struct Testcase {
     text: String,
     outcome: String,
     time: f64,
-    idx: String,
+    idx: Option<String>,
     memory: u64,
 }
 
@@ -187,7 +219,7 @@ pub struct ScoreDetail {
     testcases: Vec<Testcase>,
     score: f64,
     max_score: f64,
-    idx: usize,
+    idx: Option<usize>,
 }
 
 /// Details of a specific submission
