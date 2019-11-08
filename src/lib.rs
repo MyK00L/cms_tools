@@ -1,17 +1,18 @@
 //! # Examples:
 //! * Print list of people with highest number of fastest solutions
 //! ```
-//! let m = Client::new(String::from("Gemmady"));
-//! let task_list = m.get_task_list(0,1024,String::from(""),None,None).unwrap();
-//! let mut hm = std::collections::HashMap::<String,u32>::new();
+//! //make a client
+//! let client = Client::new(String::from("Gemmady"));
+//! let task_list = client.get_task_list(0, 1024, "", None, None).unwrap();
+//! let mut hm = std::collections::HashMap::<String, u32>::new();
 //! for i in task_list.tasks {
-//!     let best = m.get_stats(i.name).unwrap().best;
-//!     if best.len()>0 {
+//!     let best = client.get_stats(&i.name).unwrap().best;
+//!     if best.len() > 0 {
 //!         let t = hm.entry(best[0].username.clone()).or_insert(0);
-//!         *t+=1;
+//!         *t += 1;
 //!     }
 //! }
-//! let mut v : Vec<(u32,String)> = hm.iter().map(|x| (*x.1,x.0.clone())).collect();
+//! let mut v: Vec<(u32, String)> = hm.iter().map(|x| (*x.1, x.0.clone())).collect();
 //! v.sort();
 //! for i in v.iter().rev() {
 //!     println!("{} {}", i.1, i.0);
@@ -19,32 +20,34 @@
 //! ```
 //! * Resubmit all fastest solutions
 //! ```
-//! let username = String::from("username");
-//! let password = String::from("password");
+//! let username = String::from("user");
+//! let password = "password";
 //! let mut client = Client::new(username.clone());
 //! client.login(password).unwrap();
-//! let user = client.get_user(username).unwrap();
+//! let user = client.get_user(&username).unwrap();
 //! for sc in user.scores.unwrap() {
 //!     if sc.score == 100.0 {
 //!         println!("{} has score 100", sc.title);
-//!         let sub_list = client.get_submission_list(sc.name.clone()).unwrap();
+//!         let sub_list = client.get_submission_list(&sc.name).unwrap();
 //!         let best_sub = sub_list.get_fastest_high(&client).unwrap();
 //!         let files = &best_sub.files;
 //!         if files.len() == 1 { // if it is not an output-only
 //!             let mut submitted: bool = false;
+//!             print!("Resubmitting {}", sc.name.clone());
 //!             while !submitted { // because cmsocial has a limit to submission rate
-//!                 println!("Resubmitting {}", sc.name.clone());
+//!                 print!(".");
 //!                 if client
 //!                     .submit_normal(
-//!                         sc.name.clone(),
-//!                         client.get_file(&files[0]).unwrap(),
-//!                         String::from("cpp"),
+//!                         &sc.name,
+//!                         &client.get_file(&files[0]).unwrap(),
+//!                         files[0].name.split(".").collect::<Vec<&str>>().last().unwrap(),
 //!                     )
 //!                     .is_ok()
 //!                 {
 //!                     submitted = true;
 //!                 }
 //!             }
+//!             println!("");
 //!         }
 //!     }
 //! }
@@ -439,7 +442,7 @@ impl Client {
     /// Returns `Ok(true)` if the client was already logged and `Ok(false)` if it was not and succeeds in logging
     ///
     /// [example is drop-down menu on the top-right corner](https://training.olinfo.it/#/overview)
-    pub fn login(&mut self, password: String) -> Result<bool, u8> {
+    pub fn login(&mut self, password: &str) -> Result<bool, u8> {
         if self.logged {
             return Ok(true);
         }
@@ -475,7 +478,7 @@ impl Client {
     /// recover lost password, use empty code to get the email
     ///
     /// [example cms page](https://training.olinfo.it/#/forgot-account)
-    pub fn recover(&self, email: String, code: String) -> Result<RecoverResponse, u8> {
+    pub fn recover(&self, email: &str, code: &str) -> Result<RecoverResponse, u8> {
         match self
             .client
             .post("https://training.olinfo.it/api/user")
@@ -496,12 +499,7 @@ impl Client {
     /// update password/email, empty string for fields you dont want to update
     ///
     /// [example cms page](https://training.olinfo.it/#/user/Gemmady/edit)
-    pub fn user_update(
-        &self,
-        email: String,
-        password: String,
-        old_password: String,
-    ) -> Result<(), u8> {
+    pub fn user_update(&self, email: &str, password: &str, old_password: &str) -> Result<(), u8> {
         match self.client.post("https://training.olinfo.it/api/user").json(&serde_json::json!({"action":"update","email":email,"old_password":old_password,"password":password})).send() {
             Ok(mut response) => {
                 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -527,7 +525,7 @@ impl Client {
     /// check if username is valid, note: `Ok` does not mean username is valid
     ///
     /// [example is `Username` input](https://training.olinfo.it/#/signup)
-    pub fn check_username(&self, username: String) -> Result<CheckResponse, u8> {
+    pub fn check_username(&self, username: &str) -> Result<CheckResponse, u8> {
         match self
             .client
             .post("https://training.olinfo.it/api/check")
@@ -545,7 +543,7 @@ impl Client {
     /// check if email is valid, note: `Ok` does not mean email is valid
     ///
     /// [example is `E-mail address` input](https://training.olinfo.it/#/signup)
-    pub fn check_email(&self, email: String) -> Result<CheckResponse, u8> {
+    pub fn check_email(&self, email: &str) -> Result<CheckResponse, u8> {
         match self
             .client
             .post("https://training.olinfo.it/api/check")
@@ -565,7 +563,7 @@ impl Client {
     /// unlike other functions, this returs true if password is acceptable and false otherwise
     ///
     /// [example is `Password` input](https://training.olinfo.it/#/signup)
-    pub fn check_password(&self, password: String) -> bool {
+    pub fn check_password(&self, password: &str) -> bool {
         password.len() > 4
     }
 
@@ -574,7 +572,7 @@ impl Client {
     /// check if there is an user with username = username
     ///
     /// [example is `Username` input](https://training.olinfo.it/#/signup)
-    pub fn user_exists(&self, username: String) -> Result<bool, u8> {
+    pub fn user_exists(&self, username: &str) -> Result<bool, u8> {
         match self
             .client
             .post("https://training.olinfo.it/api/check")
@@ -625,7 +623,7 @@ impl Client {
     /// get the details of a specific user
     ///
     /// [example cms page](https://training.olinfo.it/#/user/MyK_00L/profile)
-    pub fn get_user(&self, username: String) -> Result<User, u8> {
+    pub fn get_user(&self, username: &str) -> Result<User, u8> {
         match self
             .client
             .post("https://training.olinfo.it/api/user")
@@ -653,9 +651,9 @@ impl Client {
         &self,
         first: usize,
         last: usize,
-        order: String,
-        tag: Option<String>,
-        search: Option<String>,
+        order: &str,
+        tag: Option<&str>,
+        search: Option<&str>,
     ) -> Result<TaskList, u8> {
         match self.client.post("https://training.olinfo.it/api/task").json(&serde_json::json!({"action":"list","first":first,"last":last,"order":order,"tag":tag,"search":search})).send() {
             Ok(mut response) => {
@@ -678,7 +676,7 @@ impl Client {
     /// get the details of a specific task
     ///
     /// [example cms page](https://training.olinfo.it/#/task/ois_luck/statement)
-    pub fn get_task(&self, name: String) -> Result<DetailedTask, u8> {
+    pub fn get_task(&self, name: &str) -> Result<DetailedTask, u8> {
         match self
             .client
             .post("https://training.olinfo.it/api/task")
@@ -699,7 +697,7 @@ impl Client {
     /// get the statistics for a specific task
     ///
     /// [example cms page](https://training.olinfo.it/#/task/ois_luck/stats)
-    pub fn get_stats(&self, name: String) -> Result<Stats, u8> {
+    pub fn get_stats(&self, name: &str) -> Result<Stats, u8> {
         match self
             .client
             .post("https://training.olinfo.it/api/task")
@@ -722,7 +720,7 @@ impl Client {
     /// get your submissions for a task
     ///
     /// [example cms page](https://training.olinfo.it/#/task/preoii_piccioni/submissions)
-    pub fn get_submission_list(&self, task_name: String) -> Result<SubmissionList, u8> {
+    pub fn get_submission_list(&self, task_name: &str) -> Result<SubmissionList, u8> {
         match self
             .client
             .post("https://training.olinfo.it/api/submission")
@@ -768,9 +766,9 @@ impl Client {
     /// [example is clicking on `submit` button](https://training.olinfo.it/#/task/fpb/submissions)
     pub fn submit_normal(
         &self,
-        task_name: String,
-        text: String,
-        lang: String,
+        task_name: &str,
+        text: &str,
+        lang: &str,
     ) -> Result<DetailedSubmission, u8> {
         match self.get_task(task_name.clone()) {
             Ok(t) => {
@@ -821,7 +819,7 @@ impl Client {
     /// get the details and text of a specific test
     ///
     /// [example cms page](https://training.olinfo.it/#/test/scolastiche2012_c)
-    pub fn get_test(&self, test_name: String) -> Result<Test, u8> {
+    pub fn get_test(&self, test_name: &str) -> Result<Test, u8> {
         match self
             .client
             .post("https://training.olinfo.it/api/test")
@@ -915,13 +913,11 @@ mod tests {
     #[test]
     fn best_times() {
         //make a client
-        let m = Client::new(String::from("Gemmady"));
-        let task_list = m
-            .get_task_list(0, 20, String::from(""), None, None)
-            .unwrap();
+        let client = Client::new(String::from("Gemmady"));
+        let task_list = client.get_task_list(0, 20, "", None, None).unwrap();
         let mut hm = std::collections::HashMap::<String, u32>::new();
         for i in task_list.tasks {
-            let best = m.get_stats(i.name).unwrap().best;
+            let best = client.get_stats(&i.name).unwrap().best;
             if best.len() > 0 {
                 let t = hm.entry(best[0].username.clone()).or_insert(0);
                 *t += 1;
@@ -936,66 +932,35 @@ mod tests {
     #[test]
     fn it_works() {
         let mut m = Client::new(String::from("MyK_00L"));
-        println!("\n\nLOGIN\n{:?}", m.login(String::from("not")));
-        println!(
-            "\n\nRECOVER\n{:?}",
-            m.recover(String::from("abcd@gmail.com"), String::from(""))
-        );
-        println!(
-            "\n\nUSER_UPDATE\n{:?}",
-            m.user_update(String::from(""), String::from(""), String::from(""))
-        );
-        println!(
-            "\n\nCHECK_USERNAME\n{:?}",
-            m.check_username(String::from("a"))
-        );
+        println!("\n\nLOGIN\n{:?}", m.login("w"));
+        println!("\n\nRECOVER\n{:?}", m.recover("abcd@gmail.com", ""));
+        println!("\n\nUSER_UPDATE\n{:?}", m.user_update("", "", ""));
+        println!("\n\nCHECK_USERNAME\n{:?}", m.check_username("a"));
         println!(
             "\n\nCHECK_EMAIL\n{:?}",
-            m.check_email(String::from("michaelchelli00@gmail.com"))
+            m.check_email("michaelchelli00@gmail.com")
         );
-        println!(
-            "\n\nCHECK_PASSWORD\n{:?}",
-            m.check_password(String::from("hello"))
-        );
-        println!(
-            "\n\nUSER_EXISTS\n{:?}",
-            m.user_exists(String::from("filippos"))
-        );
+        println!("\n\nCHECK_PASSWORD\n{:?}", m.check_password("hello"));
+        println!("\n\nUSER_EXISTS\n{:?}", m.user_exists("filippos"));
         println!("\n\nGET_USER_LIST\n{:?}", m.get_user_list(0, 8));
-        println!("\n\nGET_USER\n{:?}", m.get_user(String::from("pollo")));
+        println!("\n\nGET_USER\n{:?}", m.get_user("pollo"));
         println!(
             "\n\nGET_TASK_LIST\n{:?}",
-            m.get_task_list(
-                0,
-                8,
-                String::from("hardest"),
-                Some(String::from("dp")),
-                Some(String::from("sa"))
-            )
+            m.get_task_list(0, 8, "hardest", Some("dp"), Some("sa"))
         );
-        println!("\n\nGET_TASK\n{:?}", m.get_task(String::from("tai_mle")));
-        println!(
-            "\n\nGET_STATS\n{:?}",
-            m.get_stats(String::from("preoii_crew"))
-        );
+        println!("\n\nGET_TASK\n{:?}", m.get_task("tai_mle"));
+        println!("\n\nGET_STATS\n{:?}", m.get_stats("preoii_crew"));
         println!(
             "\n\nGET_SUBMISSION_LIST\n{:?}",
-            m.get_submission_list(String::from("preoii_piccioni"))
+            m.get_submission_list("preoii_piccioni")
         );
         println!("\n\nGET_SUBMISSION\n{:?}", m.get_submission(666));
         println!(
             "\n\nSUBMIT_NORMAL\n{:?}",
-            m.submit_normal(
-                String::from("ois_cake"),
-                String::from("int main(){}"),
-                String::from("cpp")
-            )
+            m.submit_normal("ois_cake", "int main(){}", "cpp")
         );
         println!("\n\nGET_TEST_LIST\n{:?}", m.get_test_list());
-        println!(
-            "\n\nGET_TEST\n{:?}",
-            m.get_test(String::from("scolastiche2012_pas"))
-        );
+        println!("\n\nGET_TEST\n{:?}", m.get_test("scolastiche2012_pas"));
         println!("\n\nGET_REGION_LIST\n{:?}", m.get_region_list());
         println!("\n\nGET_TECHNIQUE_LIST\n{:?}", m.get_technique_list());
         println!(
@@ -1010,9 +975,9 @@ mod tests {
     #[test]
     fn my_test() {
         let mut m = Client::new(String::from("MyK_00L"));
-        println!("{:?}", m.login(String::from("sure")));
+        println!("{:?}", m.login("sure"));
         let id = m
-            .get_submission_list(String::from("tai_mle"))
+            .get_submission_list("tai_mle")
             .unwrap()
             .get_fastest_high(&m)
             .unwrap()
