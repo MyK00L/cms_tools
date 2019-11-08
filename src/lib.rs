@@ -56,6 +56,7 @@
 //! * submission for output-only problems [example](https://training.olinfo.it/#/task/preoii_flow/submissions)
 //! * test submission request [example is `invia` button at the bottom](https://training.olinfo.it/#/test/scolastiche2012_c), also that button does not have english localization
 //! * admin requests ([this](https://github.com/algorithm-ninja/cmsocial/blob/88bb6e8992455d2d780c33214e895d8d3f5e63ed/cmsocial-web/scripts/admin.js#L38))
+//! * any request I do not know the existence of
 
 // User management related
 
