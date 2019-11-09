@@ -61,14 +61,14 @@
 // User management related
 
 /// Response for email and username checking
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct CheckResponse {
     pub success: u8,
     pub error: Option<String>,
 }
 
 /// Responses for password recovery requests
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct RecoverResponse {
     pub message: Option<String>,
     #[serde(rename = "type")]
@@ -80,7 +80,7 @@ pub struct RecoverResponse {
 // Users related
 
 /// Institute of an user
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Institute {
     pub province: Option<String>,
     pub city: Option<String>,
@@ -90,7 +90,7 @@ pub struct Institute {
 }
 
 /// User info
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct User {
     pub username: String,
     pub mail_hash: String,
@@ -106,7 +106,7 @@ pub struct User {
 }
 
 /// List of users
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct UserList {
     pub num: usize,
     pub users: Vec<User>,
@@ -116,20 +116,20 @@ pub struct UserList {
 // Task related
 
 /// digest of statement file? apparently not
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Statement {
     pub it: Option<String>,
 }
 
 /// tags, like technique or event tags
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Tag {
     pub name: String,
     pub can_delete: bool,
 }
 
 /// Detailed task description
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct DetailedTask {
     pub time_limit: Option<f64>,
     pub help_available: bool,
@@ -147,7 +147,7 @@ pub struct DetailedTask {
 }
 
 /// Task in a TaskList
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Task {
     pub score: Option<f64>,
     pub title: String,
@@ -157,7 +157,7 @@ pub struct Task {
 }
 
 /// List of tasks
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct TaskList {
     pub tasks: Vec<Task>,
     pub num: usize,
@@ -165,14 +165,14 @@ pub struct TaskList {
 }
 
 /// Best time by someone on some task
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Stat {
     pub username: String,
     pub time: f64,
 }
 
 /// Stats of a certain task
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Stats {
     pub nsubscorrect: usize,
     pub success: u8,
@@ -185,7 +185,7 @@ pub struct Stats {
 // Submission related
 
 /// Score achieved on a certain task by someone
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Score {
     pub score: f64,
     pub name: String,
@@ -193,14 +193,14 @@ pub struct Score {
 }
 
 /// Description of a file
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct File {
     pub name: String,
     pub digest: String,
 }
 
 /// Submission, not detailed
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Submission {
     pub files: Vec<File>,
     pub compilation_outcome: Option<String>,
@@ -212,7 +212,7 @@ pub struct Submission {
 }
 
 /// Outcome of a certain submission for a specific testcase
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Testcase {
     pub text: String,
     pub outcome: String,
@@ -222,7 +222,7 @@ pub struct Testcase {
 }
 
 /// Score details for a specific submission
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct ScoreDetail {
     pub testcases: Vec<Testcase>,
     pub score: f64,
@@ -231,7 +231,7 @@ pub struct ScoreDetail {
 }
 
 /// Details of a specific submission
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct DetailedSubmission {
     pub files: Vec<File>,
     pub compilation_outcome: Option<String>,
@@ -282,7 +282,7 @@ impl DetailedSubmission {
 }
 
 /// List of submissions by a user for a task
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct SubmissionList {
     pub submissions: Vec<Submission>,
     pub success: u8,
@@ -349,7 +349,7 @@ impl SubmissionList {
 // Test related
 
 /// Basic informations of a test
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct TestHead {
     pub max_score: u8,
     pub name: String,
@@ -357,7 +357,7 @@ pub struct TestHead {
 }
 
 /// Question inside of a test
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Question {
     pub max_score: u8,
     pub text: String,
@@ -368,7 +368,7 @@ pub struct Question {
 }
 
 /// Test, also known as Quiz
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Test {
     pub success: u8,
     pub name: String,
@@ -377,14 +377,14 @@ pub struct Test {
 }
 
 /// List of Tests
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct TestList {
     pub tests: Vec<TestHead>,
     pub success: u8,
 }
 
 /// Region
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct Region {
     pub id: usize,
     pub name: String,
@@ -393,14 +393,14 @@ pub struct Region {
 // Misc
 
 /// List of regions
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct RegionList {
     pub regions: Vec<Region>,
     pub success: u8,
 }
 
 /// List of `technique` tags
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct TechniqueList {
     pub success: u8,
     pub tags: Vec<String>,
@@ -507,7 +507,7 @@ impl Client {
     pub fn user_update(&self, email: &str, password: &str, old_password: &str) -> Result<(), u8> {
         match self.client.post("https://training.olinfo.it/api/user").json(&serde_json::json!({"action":"update","email":email,"old_password":old_password,"password":password})).send() {
             Ok(mut response) => {
-                #[derive(serde::Serialize, serde::Deserialize, Debug)]
+                #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
                 struct Resp {
                     success: u8
                 }

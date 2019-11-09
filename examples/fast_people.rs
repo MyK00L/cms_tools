@@ -1,6 +1,6 @@
 use cms_tools::*;
 
-fn main(){
+fn main() {
     //make a client
     let client = Client::new(String::from("Gemmady"));
     let task_list = client.get_task_list(0, 1024, "", None, None).unwrap();

@@ -1,12 +1,14 @@
 [package]
 name = "cms_tools"
 version = "0.1.0"
-description = "A rust crate for interacting with the CMSocial competitive programming platform"
-repository = "https://github.com/MyK00L/cms_tools"
-authors = ["Michael Chelli <michaelchelli00@gmail.com>"]
-readme = "README.md"
-license = "MIT"
 edition = "2018"
+authors = ["Michael Chelli <michaelchelli00@gmail.com>"]
+description = "A rust crate for interacting with the CMSocial competitive programming platform"
+license = "MIT"
+repository = "https://github.com/MyK00L/cms_tools"
+readme = "README.md"
+keywords = ["cms","cmsocial","training","olinfo"]
+categories = ["api-bindings","network-programming"]
 
 [dependencies]
 reqwest = "0.9"
