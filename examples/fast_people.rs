@@ -7,7 +7,7 @@ fn main() {
     let mut hm = std::collections::HashMap::<String, u32>::new();
     for i in task_list.tasks {
         let best = client.get_stats(&i.name).unwrap().best;
-        if best.len() > 0 {
+        if best.len() > 0 && (best.len() == 1 || best[0].time != best[1].time) {
             let t = hm.entry(best[0].username.clone()).or_insert(0);
             *t += 1;
         }
